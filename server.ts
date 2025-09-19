@@ -19,6 +19,51 @@ app.get("/", (req, res) => {
   res.json({ message: "Welcome to the Open Bus API" });
 });
 
+app.patch("/card/using", async (req, res) => {
+    try {
+        const { serialNumber, busId, location } = req.body;
+
+        const card = await prisma.card.findUnique({
+            where: { serialNumber },
+            select: { id: true, isPreferential: true }
+        });
+
+        if (!card) {
+            return res.status(404).json({ error: "Card not found" });
+        }
+
+        await prisma.card.update({
+            where: { serialNumber },
+            data: { balance: { decrement: card.isPreferential ? 5.25 : 11.00 } }
+        });
+
+
+        const transfer = await prisma.transfer.create({
+            data: {
+                cardId: card.id,
+                busId,
+                location
+            },
+            select: { id: true }
+        })
+
+        const transferId = transfer.id;
+
+        await prisma.transaction.create({
+            data: {
+                cardId: card.id,
+                amount: card.isPreferential ? 5.25 : 11.00,
+                transferId
+            }
+        });
+
+        res.status(200).json({ message: `Card ${serialNumber} used successfully.` });
+
+    } catch (error) {
+        res.status(500).json({ error: "Internal server error" });
+    }
+});
+
 app.post("/card/recharge", async (req, res) => {
     try {
         const cardId = Number(req.body.cardId);
