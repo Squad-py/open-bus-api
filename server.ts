@@ -16,12 +16,13 @@ app.use(express.json());
 const PORT = process.env.PORT || 3000;
 
 app.get("/", (req, res) => {
-  res.json({ message: "Welcome to the Open Bus API" });
+    res.json({ message: "Welcome to the Open Bus API" });
 });
 
 app.patch("/card/using", async (req, res) => {
     try {
-        const { serialNumber, busId, location } = req.body;
+        const { serialNumber, location } = req.body;
+        const busId = Number(req.body.busId);
 
         const card = await prisma.card.findUnique({
             where: { serialNumber },
@@ -52,7 +53,7 @@ app.patch("/card/using", async (req, res) => {
         await prisma.transaction.create({
             data: {
                 cardId: card.id,
-                amount: card.isPreferential ? 5.25 : 11.00,
+                amount: card.isPreferential ? -5.25 : -11.00,
                 transferId
             }
         });
@@ -88,6 +89,49 @@ app.post("/card/recharge", async (req, res) => {
     }
 });
 
+app.get("/card/:cardId", async (req, res) => {
+    try {
+        const cardId = Number(req.params.cardId);
+
+        const cardBalance = await prisma.card.findUnique({
+            where: { id: cardId },
+            select: { balance: true, serialNumber: true, isPreferential: true }
+        })
+
+        const cardUses = await prisma.transaction.findMany({
+            orderBy: {
+                createdAt: 'desc',
+            },
+            where: {
+                cardId,
+            },
+            select: {
+                amount: true,
+                createdAt: true,
+                Transfer: {
+                    select: {
+                        Bus: {
+                            select: {
+                                id: true,
+                                Route: {
+                                    select: {
+                                        name: true,
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+            take: 10,
+        });
+
+        res.status(200).json({ cardBalance, cardUses });
+    } catch (error) {
+        res.status(500).json({ error: "Internal server error" });
+    }
+});
+
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+    console.log(`Server is running on port ${PORT}`);
 });
