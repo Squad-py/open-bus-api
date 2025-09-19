@@ -1,0 +1,28 @@
+{
+  "name": "open-bus-api",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "tsc && node server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.3",
+    "dotenv": "^17.2.2",
+    "typescript": "^5.9.2"
+  },
+  "dependencies": {
+    "-": "^0.0.1",
+    "@prisma/client": "^6.16.2",
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "prisma": "^6.16.2",
+    "save-dev": "^0.0.1-security"
+  }
+}
